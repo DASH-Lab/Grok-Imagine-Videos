@@ -7,7 +7,7 @@ import random
 gemma12_model = "google/gemma-3-12b-it:free"
 gemma4_model = "google/gemma-3-4b-it:free"
 llama3_model = "meta-llama/llama-3.2-3b-instruct:free"
-KEY = <YOUR_KEY> #Correct your key here 
+KEY = "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"
 
 from utils import PLACES
 from utils import ACTIVITIES
@@ -27,6 +27,9 @@ CRITICAL REQUIREMENTS:
 - Every single description MUST include the exact words "{race} {gender}"
 - Do NOT use pronouns like "she", "he", "they" or "the person" - always use "{race} {gender}"
 - Do NOT substitute with other terms - use exactly "{race} {gender}" in each description
+- The {race} {gender}'s FACE must be CLEARLY VISIBLE in every description
+- NEVER describe the person from behind, with face hidden, or face obscured
+- The face should be shown from front view, side profile, or three-quarter angle
 
 Each description should be unique and capture different aspects like mood, 
 camera angles, lighting, setting details, or the person's appearance and actions.
@@ -34,13 +37,13 @@ camera angles, lighting, setting details, or the person's appearance and actions
 Format your response exactly as follows:
 
 ===VIDEO_DESC_1===
-{article.capitalize()} {race} {gender} [rest of description here - must contain "{race} {gender}" at least once]
+{article.capitalize()} {race} {gender} [rest of description here - must contain "{race} {gender}" at least once,  and visible face]
 
 ===VIDEO_DESC_2===
-[Second description here - must contain "{race} {gender}" at least once]
+[Second description here - must contain "{race} {gender}" at least once, and visible face]
 
 ===VIDEO_DESC_3===
-[Third description here - must contain "{race} {gender}" at least once]
+[Third description here - must contain "{race} {gender}" at least once, and visible face]
 
 Continue this pattern through ===VIDEO_DESC_20===
 
@@ -49,6 +52,7 @@ EXAMPLE GOOD DESCRIPTION:
 
 EXAMPLE BAD DESCRIPTION (DO NOT DO THIS):
 A person sits by the window reading. She looks peaceful. (WRONG - does not use "{race} {gender}")
+
 
 Make each description 1-2 sentences long and suitable for video generation AI. 
 Include visual details about the environment, the {race} {gender}, the atmosphere, and any notable actions or moments.
