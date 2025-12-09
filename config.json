@@ -1,0 +1,7 @@
+{
+  "profile_path": null,
+  "cookies_file": "grok_cookies.json",
+  "headless": false,
+  "video_wait_time": 180,
+  "wait_between_videos": 10
+}
