@@ -4,7 +4,7 @@
 
 ## 1. What This Repository Does
 
-This project generates videos using **Grok Imagine** based on automatically created text prompts.
+This project generates videos using **Grok Imagine** based on automatically created text prompts. Free rate limits of Grok Imagine now could be around 50~60 request per day.
 
 ### **Where do the text prompts come from?**
 
