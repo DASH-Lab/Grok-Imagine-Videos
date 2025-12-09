@@ -4,7 +4,7 @@
 
 ## 1. What This Repository Does
 
-This project generates videos using **Grok Imagine** based on automatically created text prompts. Free rate limits of Grok Imagine now could be around 50~60 request per day.
+This project generates videos using **Grok Imagine** based on automatically created text prompts. Free rate limits of Grok Imagine now could be around 50~60 requests per day.
 
 ### **Where do the text prompts come from?**
 
@@ -53,4 +53,4 @@ pip install -r requirements.txt
    * (If you have suggestions for automating this step, contributions are welcome!)
 3. Run `gen_exe.bat` to start generating videos. NO MANUAL STEPS required futher.
 
-( in side `gen_exe.bat`, tt'll first run `prompt_gen.py` to create 20 prompts by LLMs. Then, `video_create.py` create video and download sequentially. One'CSV' file created after all will store time stamp, video name, prompt for each video.)
+( In side `gen_exe.bat`, it'll first run `prompt_gen.py` to create 20 prompts by LLMs. Then, `video_create.py` create video and download sequentially. One'CSV' file created after all will store time stamp, video name, prompt for each video.)
