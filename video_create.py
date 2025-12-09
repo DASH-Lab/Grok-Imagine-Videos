@@ -562,7 +562,7 @@ pause
         filename = f"Gr-binh-{next_number}-{race_code}-{gender_code}.mp4"
         return filename, next_number
     
-    def rename_downloaded_file(self, expected_filename, max_wait=30):
+    def rename_downloaded_file(self, expected_filename, max_wait=20):
         """Wait for download to complete and rename the file"""
         try:
             print(f"📁 Waiting for download to complete and renaming to: {expected_filename}")
