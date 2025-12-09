@@ -7,7 +7,7 @@ import random
 gemma12_model = "google/gemma-3-12b-it:free"
 gemma4_model = "google/gemma-3-4b-it:free"
 llama3_model = "meta-llama/llama-3.2-3b-instruct:free"
-KEY = "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"
+KEY = <YOUR_API_KEY>
 
 from utils import PLACES
 from utils import ACTIVITIES
@@ -48,14 +48,14 @@ Format your response exactly as follows:
 Continue this pattern through ===VIDEO_DESC_20===
 
 EXAMPLE GOOD DESCRIPTION:
-{article.capitalize()} {race} {gender} sits by the window in a cozy {place}, where the {race} {gender} is deeply absorbed in {activity}.
+{article.capitalize()} {race} {gender} sits by the window in a cozy {place}, face illuminated by natural light as the {race} {gender} is deeply absorbed in {activity}.
 
 EXAMPLE BAD DESCRIPTION (DO NOT DO THIS):
-A person sits by the window reading. She looks peaceful. (WRONG - does not use "{race} {gender}")
+Shot from behind showing a person sits by the window reading. She looks peaceful. (WRONG - does not use "{race} {gender}, face hidden")
 
 
 Make each description 1-2 sentences long and suitable for video generation AI. 
-Include visual details about the environment, the {race} {gender}, the atmosphere, and any notable actions or moments.
+Include visual details about the environment, the {race} {gender}, face expression, the atmosphere, and any notable actions or moments.
 """
     return prompt
 
