@@ -38,7 +38,9 @@ pip install -r requirements.txt
 1. Create a free API key at: **openrouter.ai**
 2. Insert the key into line 10 of `prompt_gen.py`.
 3. Install **RAIDRIVE** if you want to access the server disk through Windows Explorer.
-4. Update `self.download_dir` in line 96 of `video_create.py` to your preferred output directory.
+4. Update `self.download_dir` in `line 96` of `video_create.py` to your preferred output directory. 
+
+ 
 
 ---
 
@@ -51,4 +53,4 @@ pip install -r requirements.txt
    * (If you have suggestions for automating this step, contributions are welcome!)
 3. Run `gen_exe.bat` to start generating videos. NO MANUAL STEPS required futher.
 
-It first run `prompt_gen.py` to create 20 prompts by LLMs. Then, `video_create.py` create video and download sequentially. One'CSV' file created after all will store time stamp, video name, prompt for each video.
+( in side `gen_exe.bat`, tt'll first run `prompt_gen.py` to create 20 prompts by LLMs. Then, `video_create.py` create video and download sequentially. One'CSV' file created after all will store time stamp, video name, prompt for each video.)
