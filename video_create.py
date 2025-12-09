@@ -93,7 +93,7 @@ class GrokVideoAutomation:
         self.debugger_port = debugger_port
         self.driver = None
         # Remote drive path (RaiDrive mounted)
-        self.download_dir = r"V:\media\NAS\DATASET\GenAI_600\created_human_videos\Grok\binh"  
+        self.download_dir = <YOUR_OUTPUT_FOLDER> # r"V:\media\NAS\DATASET\GenAI_600\created_human_videos\Grok\binh"  
         
         # Ensure download directory exists (works with remote drives too)
         try:
