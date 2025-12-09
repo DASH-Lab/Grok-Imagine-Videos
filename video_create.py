@@ -93,7 +93,7 @@ class GrokVideoAutomation:
         self.debugger_port = debugger_port
         self.driver = None
         # Remote drive path (RaiDrive mounted)
-        self.download_dir = <YOUR_OUTPUT_FOLDER> #Correct your output folder here r"V:\media\NAS\DATASET\GenAI_600\created_human_videos\Grok\binh"
+        self.download_dir = r"V:\media\NAS\DATASET\GenAI_600\created_human_videos\Grok\binh"  
         
         # Ensure download directory exists (works with remote drives too)
         try:
@@ -495,7 +495,7 @@ pause
             
             # Wait a bit for video generation to start
             print("⏳ Waiting for video generation to start...")
-            time.sleep(30)  # Initial wait
+            time.sleep(45)  # Initial wait
             
             # Check if download button appears (video is ready)
             print("🔍 Checking if video is ready (looking for download button)...")
