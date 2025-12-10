@@ -39,8 +39,7 @@ pip install -r requirements.txt
 2. Insert the key into line 10 of `prompt_gen.py`.
 3. Install **RAIDRIVE** if you want to access the server disk through Windows Explorer.
 4. Update `self.download_dir` in `line 96` of `video_create.py` to your preferred output directory. 
- In `line 545` and `562`, edit your UserID.
-
+Update your UID in file "config.json"
 
 ---
 
