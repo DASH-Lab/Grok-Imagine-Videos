@@ -153,7 +153,7 @@ class GrokVideoAutomation:
         self.uid = uid
         
         # Remote drive path (RaiDrive mounted)
-        self.download_dir = <PATH_TO_YOUR_DOWNLOAD_DIRECTORY> # rf"V:\media\NAS\DATASET\GenAI_600\created_human_videos\Grok\{self.uid}"  
+        self.download_dir =  <YOUR_PATH> # rf"V:\media\NAS\DATASET\GenAI_600\created_human_videos\Grok\{self.uid}"  
         
         # Ensure download directory exists (works with remote drives too)
         try:
@@ -1038,7 +1038,7 @@ pause
             default_upload_status = "Uploaded"
             
             # Use fixed path for final CSV
-            csv_filename = <PATH_TO_YOUR_CSV_FILE> # rf"V:\media\NAS\DATASET\GenAI_600\created_human_videos\metadata\{self.uid}\created_video_dataset.csv"
+            csv_filename =  <YOUR_PATH> # rf"V:\media\NAS\DATASET\GenAI_600\created_human_videos\metadata\{self.uid}\created_video_dataset.csv"
             
             # Ensure directory exists
             csv_dir = os.path.dirname(csv_filename)
@@ -1050,8 +1050,9 @@ pause
             # Check if file exists to determine if we need headers
             file_exists = os.path.exists(csv_filename)
             
-            # Open CSV file in append mode
-            with open(csv_filename, 'a', newline='', encoding='utf-8') as csvfile:
+            # Open CSV file in append mode with UTF-8-sig for Windows compatibility
+            # UTF-8-sig includes BOM that helps Windows apps (like Excel) recognize UTF-8 encoding
+            with open(csv_filename, 'a', newline='', encoding='utf-8-sig') as csvfile:
                 fieldnames = ['Date', 'FileName', 'FileDirectory', 'ModelID', 'VideoLenght', 
                              'Prompt', 'Uid', 'VideoIndex', 'Race', 'Gender', 'QC_Notes', 'UploadStatus']
                 writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
