@@ -583,13 +583,39 @@ pause
                     time.sleep(30)  # Wait for video generation
                     print("🔍 Checking if video from photo is ready...")
                     is_ready_after_photo, downloaded_file_after_photo = self.check_video_ready_by_download_button()
+                    
                     if is_ready_after_photo and downloaded_file_after_photo:
-                        print(f"✓ Video from photo is ready and already downloaded: {downloaded_file_after_photo}")
-                        already_downloaded_file = downloaded_file_after_photo
+                        # Verify it's actually a video file (not thumbnail)
+                        file_path = os.path.join(self.download_dir, downloaded_file_after_photo)
+                        if self.verify_video_file(file_path):
+                            print(f"✓ Video from photo is ready and verified: {downloaded_file_after_photo}")
+                            already_downloaded_file = downloaded_file_after_photo
+                        else:
+                            # Downloaded file is not a valid video - exit
+                            print(f"✗ Downloaded file is not a valid video: {downloaded_file_after_photo}")
+                            print("\n" + "="*60)
+                            print("✗ VIDEO GENERATION FAILED")
+                            print("="*60)
+                            print("After generating video from photo, downloaded file is not a valid video.")
+                            print("Stopping the program...")
+                            print("="*60)
+                            return False
                     elif is_ready_after_photo:
                         print("✓ Video from photo is ready!")
                     else:
-                        print("⚠ Video from photo still not ready")
+                        # Thumbnail downloaded again after photo method - exit immediately
+                        print("✗ Thumbnail downloaded again after photo method - video generation failed")
+                        print("\n" + "="*60)
+                        print("✗ VIDEO GENERATION FAILED")
+                        print("="*60)
+                        print("Video generation failed even after:")
+                        print("  1. Initial video generation attempt")
+                        print("  2. Scrolling down and selecting first suggested photo")
+                        print("  3. Generating video from photo")
+                        print("  4. Second verification still downloaded thumbnail (video not ready)")
+                        print("\nStopping the program...")
+                        print("="*60)
+                        return False
             
             if used_photo_method:
                 print("✓ Video generation complete (from photo)!")
@@ -610,18 +636,36 @@ pause
                         time.sleep(2)
                         os.rename(old_path, new_path)
                         print(f"✓ Renamed: {already_downloaded_file} → {expected_filename}")
-                        download_result = (True, expected_filename)
+                        # Verify it's actually a video file
+                        if self.verify_video_file(new_path):
+                            download_result = (True, expected_filename)
+                        else:
+                            print(f"✗ Renamed file is not a valid video: {expected_filename}")
+                            download_result = (False, None)
                     except Exception as e:
                         print(f"⚠ Could not rename file: {e}")
                         download_result = (False, None)
                 else:
                     print(f"✓ File already named correctly: {expected_filename}")
-                    download_result = (True, expected_filename)
+                    # Verify it's actually a video file
+                    if self.verify_video_file(new_path):
+                        download_result = (True, expected_filename)
+                    else:
+                        print(f"✗ File is not a valid video: {expected_filename}")
+                        download_result = (False, None)
             else:
                 # Download the video
                 download_result = self.download_video(prompt)
+                # Verify the downloaded file is actually a video
+                if download_result and isinstance(download_result, tuple):
+                    download_success_temp, video_name_temp = download_result
+                    if download_success_temp and video_name_temp:
+                        video_path = os.path.join(self.download_dir, video_name_temp)
+                        if not self.verify_video_file(video_path):
+                            print(f"✗ Downloaded file is not a valid video: {video_name_temp}")
+                            download_result = (False, None)
             
-            # Check if video was successfully downloaded
+            # Check if video was successfully downloaded and verified
             download_success = False
             video_name = None
             if download_result and isinstance(download_result, tuple):
@@ -638,6 +682,8 @@ pause
                     print("  1. Initial video generation attempt")
                     print("  2. Scrolling down and selecting first suggested photo")
                     print("  3. Generating video from photo")
+                    if video_name:
+                        print(f"  4. Downloaded file is not a valid video: {video_name}")
                     print("\nStopping the program...")
                     print("="*60)
                     return False
@@ -660,6 +706,54 @@ pause
         except Exception as e:
             print(f"✗ Error generating video: {e}")
             self.take_screenshot(f"error_{int(time.time())}.png")
+            return False
+    
+    def verify_video_file(self, file_path):
+        """
+        Verify that a file is actually a video file (not a thumbnail image).
+        Checks file extension, size, and attempts to open as video.
+        Returns True if it's a valid video file, False otherwise.
+        """
+        try:
+            if not os.path.exists(file_path):
+                return False
+            
+            # Check file extension
+            if not file_path.lower().endswith('.mp4'):
+                return False
+            
+            # Check file size - videos should be at least 100KB (thumbnails are usually smaller)
+            file_size = os.path.getsize(file_path)
+            if file_size < 100 * 1024:  # Less than 100KB
+                print(f"⚠ File too small to be a video: {file_size} bytes")
+                return False
+            
+            # Try to verify it's actually a video by attempting to get duration
+            # This will fail if it's not a valid video file
+            duration = get_video_duration(file_path)
+            if duration == "":
+                # Could not get duration - might not be a valid video
+                print(f"⚠ Could not verify video file - unable to get duration")
+                # But if file is reasonably large, it might still be a video
+                # (some video libraries might not be available)
+                # So we'll accept it if it's large enough
+                if file_size > 500 * 1024:  # More than 500KB, likely a video
+                    return True
+                return False
+            
+            # Successfully got duration - it's a valid video
+            return True
+            
+        except Exception as e:
+            print(f"⚠ Error verifying video file: {e}")
+            # If we can't verify, check file size as fallback
+            try:
+                if os.path.exists(file_path):
+                    file_size = os.path.getsize(file_path)
+                    # If file is large enough, assume it's a video
+                    return file_size > 500 * 1024  # More than 500KB
+            except:
+                pass
             return False
     
     def count_existing_videos(self):
