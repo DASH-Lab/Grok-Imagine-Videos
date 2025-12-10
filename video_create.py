@@ -153,7 +153,7 @@ class GrokVideoAutomation:
         self.uid = uid
         
         # Remote drive path (RaiDrive mounted)
-        self.download_dir =  <YOUR_PATH> # rf"V:\media\NAS\DATASET\GenAI_600\created_human_videos\Grok\{self.uid}"  
+        self.download_dir = <PATH TO DOWNLOAD DIRECTORY> #  rf"V:\media\NAS\DATASET\GenAI_600\created_human_videos\Grok\{self.uid}"  
         
         # Ensure download directory exists (works with remote drives too)
         try:
@@ -560,22 +560,66 @@ pause
             # Check if download button appears (video is ready)
             print("🔍 Checking if video is ready (looking for download button)...")
             used_photo_method = False
+            already_downloaded_file = None
             
-            if self.check_video_ready_by_download_button():
+            is_ready, downloaded_file = self.check_video_ready_by_download_button()
+            
+            if is_ready and downloaded_file:
+                # Video was already downloaded during the check
+                print(f"✓ Video is ready and already downloaded: {downloaded_file}")
+                already_downloaded_file = downloaded_file
+            elif is_ready:
+                # Video is ready but wasn't downloaded yet (shouldn't happen, but handle it)
                 print("✓ Video is ready! Download button found.")
             else:
-                # Download button not found or not working after 20 seconds
-                print("⚠ Video generation failed or taking too long")
+                # Thumbnail was downloaded, meaning video is not ready
+                print("⚠ Thumbnail image downloaded - video not ready yet")
                 print("   Trying alternative method: generate video from photo...")
                 used_photo_method = self.generate_video_from_photo()
+                
+                # After generating from photo, check again if video is ready
+                if used_photo_method:
+                    print("⏳ Waiting for video generation from photo to complete...")
+                    time.sleep(30)  # Wait for video generation
+                    print("🔍 Checking if video from photo is ready...")
+                    is_ready_after_photo, downloaded_file_after_photo = self.check_video_ready_by_download_button()
+                    if is_ready_after_photo and downloaded_file_after_photo:
+                        print(f"✓ Video from photo is ready and already downloaded: {downloaded_file_after_photo}")
+                        already_downloaded_file = downloaded_file_after_photo
+                    elif is_ready_after_photo:
+                        print("✓ Video from photo is ready!")
+                    else:
+                        print("⚠ Video from photo still not ready")
             
             if used_photo_method:
                 print("✓ Video generation complete (from photo)!")
             else:
                 print("✓ Video generation complete!")
             
-            # Download the video
-            download_result = self.download_video(prompt)
+            # Download the video (only if not already downloaded)
+            if already_downloaded_file:
+                # Video was already downloaded, just rename it
+                print(f"📁 Video already downloaded, renaming: {already_downloaded_file}")
+                expected_filename, video_number = self.get_next_video_filename(prompt)
+                old_path = os.path.join(self.download_dir, already_downloaded_file)
+                new_path = os.path.join(self.download_dir, expected_filename)
+                
+                if old_path != new_path:
+                    try:
+                        # Wait a bit to ensure file is complete
+                        time.sleep(2)
+                        os.rename(old_path, new_path)
+                        print(f"✓ Renamed: {already_downloaded_file} → {expected_filename}")
+                        download_result = (True, expected_filename)
+                    except Exception as e:
+                        print(f"⚠ Could not rename file: {e}")
+                        download_result = (False, None)
+                else:
+                    print(f"✓ File already named correctly: {expected_filename}")
+                    download_result = (True, expected_filename)
+            else:
+                # Download the video
+                download_result = self.download_video(prompt)
             
             # If video was successfully downloaded, save prompt to CSV
             if download_result and isinstance(download_result, tuple):
@@ -777,17 +821,18 @@ pause
             return (False, None)
     
     def check_video_ready_by_download_button(self):
-        """Check if video is ready by trying to click download button and verifying download starts"""
+        """Check if video is ready by testing download and verifying it's a real video file (not thumbnail)
+        Returns: (is_ready, downloaded_filename) tuple
+        - is_ready: True if video is ready, False if only thumbnail downloaded
+        - downloaded_filename: filename if video was downloaded, None otherwise
+        """
         try:
-            # Get list of existing files before clicking download
+            # Get initial files
             initial_files = set()
-            try:
-                if os.path.exists(self.download_dir):
-                    initial_files = set(os.listdir(self.download_dir))
-            except:
-                pass
+            if os.path.exists(self.download_dir):
+                initial_files = set(os.listdir(self.download_dir))
             
-            # Try to find download button
+            # Find download button
             download_selectors = [
                 (By.XPATH, "//button[contains(@aria-label, 'download') or contains(@aria-label, 'Download')]"),
                 (By.XPATH, "//a[contains(@aria-label, 'download') or contains(@aria-label, 'Download')]"),
@@ -800,7 +845,6 @@ pause
                 (By.XPATH, "//a[.//*[contains(@class, 'download')]]")
             ]
             
-            # Wait up to 30 seconds for download button to appear and be clickable
             download_button = None
             for selector_type, selector_value in download_selectors:
                 try:
@@ -814,53 +858,81 @@ pause
                     continue
             
             if not download_button:
-                print("⚠ Download button not found or not clickable after 20 seconds")
-                return False
+                print("⚠ Download button not found or not clickable after 30 seconds")
+                return (False, None)
             
-            # Try clicking the download button to see if download actually starts
+            # Click to test download
             print("🖱️ Testing download button click...")
+            self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", download_button)
+            time.sleep(0.5)
             try:
-                # Scroll button into view
-                self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", download_button)
-                time.sleep(0.5)
+                download_button.click()
+            except:
+                self.driver.execute_script("arguments[0].click();", download_button)
+            
+            # Wait and check what was downloaded
+            print("   Waiting 10 seconds to verify download type...")
+            time.sleep(10)
+            
+            if os.path.exists(self.download_dir):
+                current_files = set(os.listdir(self.download_dir))
+                new_files = current_files - initial_files
                 
-                # Click the button
-                try:
-                    download_button.click()
-                except:
-                    self.driver.execute_script("arguments[0].click();", download_button)
-                
-                # Wait a few seconds to see if download actually started
-                print("   Waiting 10 seconds to check if download started...")
-                time.sleep(10)
-                
-                # Check if new file appeared in download directory
-                try:
-                    if os.path.exists(self.download_dir):
-                        current_files = set(os.listdir(self.download_dir))
-                        new_files = current_files - initial_files
-                        
-                        # Check for new MP4 files or .crdownload files (Chrome download in progress)
-                        for file in new_files:
-                            if file.lower().endswith('.mp4') or file.lower().endswith('.crdownload'):
-                                print("✓ Download started! Video is ready.")
-                                return True
-                except:
-                    pass
-                
-                # If no new file, video might not be ready yet
-                print("⚠ Download button clicked but no download started")
-                print("   Video may still be generating...")
-                return False
-                
-            except Exception as e:
-                print(f"⚠ Error clicking download button: {e}")
-                return False
+                # Check what type of files were downloaded
+                for file in new_files:
+                    file_lower = file.lower()
+                    file_path = os.path.join(self.download_dir, file)
+                    
+                    # Check if it's a video file (.mp4 or in-progress .crdownload)
+                    if file_lower.endswith('.mp4'):
+                        # Wait a bit more to ensure file is complete
+                        time.sleep(2)
+                        if os.path.exists(file_path):
+                            print(f"✓ Real video file downloaded: {file}")
+                            return (True, file)  # Video ready and already downloaded
+                            
+                    elif file_lower.endswith('.crdownload'):
+                        # Chrome download in progress - likely a video
+                        print("✓ Video download in progress (.crdownload)")
+                        # Wait for download to complete
+                        waited = 0
+                        while waited < 30:
+                            time.sleep(2)
+                            waited += 2
+                            if os.path.exists(file_path.replace('.crdownload', '.mp4')):
+                                final_file = file.replace('.crdownload', '.mp4')
+                                print(f"✓ Video download completed: {final_file}")
+                                return (True, final_file)
+                            elif not os.path.exists(file_path):
+                                # Download may have failed or completed with different name
+                                break
+                        # If we get here, try to find the completed file
+                        current_files_after = set(os.listdir(self.download_dir))
+                        new_files_after = current_files_after - initial_files
+                        for f in new_files_after:
+                            if f.lower().endswith('.mp4'):
+                                print(f"✓ Video download completed: {f}")
+                                return (True, f)
+                        return (True, None)  # Video ready but filename unknown
+                    
+                    # Check for thumbnail image formats
+                    elif file_lower.endswith(('.jpg', '.jpeg', '.png', '.gif', '.webp')):
+                        print(f"⚠ Only thumbnail image downloaded: {file} (video not ready)")
+                        # Delete the thumbnail
+                        try:
+                            os.remove(file_path)
+                            print(f"   Deleted thumbnail: {file}")
+                        except Exception as e:
+                            print(f"   Could not delete thumbnail: {e}")
+                        return (False, None)  # Thumbnail only, video not ready
+            
+            # If no new files appeared at all
+            print("⚠ Download button clicked but no download detected")
+            return (False, None)
             
         except Exception as e:
             print(f"⚠ Error checking download button: {e}")
-            return False
-    
+            return (False, None)
     def generate_video_from_photo(self):
         """Generate video from first photo by scrolling down and clicking Make video"""
         try:
@@ -1038,7 +1110,7 @@ pause
             default_upload_status = "Uploaded"
             
             # Use fixed path for final CSV
-            csv_filename =  <YOUR_PATH> # rf"V:\media\NAS\DATASET\GenAI_600\created_human_videos\metadata\{self.uid}\created_video_dataset.csv"
+            csv_filename = <PATH TO CSV FILE> #rf"V:\media\NAS\DATASET\GenAI_600\created_human_videos\metadata\{self.uid}\created_video_dataset.csv"
             
             # Ensure directory exists
             csv_dir = os.path.dirname(csv_filename)
