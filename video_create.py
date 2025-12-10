@@ -153,7 +153,7 @@ class GrokVideoAutomation:
         self.uid = uid
         
         # Remote drive path (RaiDrive mounted)
-        self.download_dir = <PATH TO DOWNLOAD DIRECTORY> #  rf"V:\media\NAS\DATASET\GenAI_600\created_human_videos\Grok\{self.uid}"  
+        self.download_dir =  <YOUR DOWNLOAD DIRECTORY> # rf"V:\media\NAS\DATASET\GenAI_600\created_human_videos\Grok\{self.uid}"  
         
         # Ensure download directory exists (works with remote drives too)
         try:
@@ -621,12 +621,35 @@ pause
                 # Download the video
                 download_result = self.download_video(prompt)
             
-            # If video was successfully downloaded, save prompt to CSV
+            # Check if video was successfully downloaded
+            download_success = False
+            video_name = None
             if download_result and isinstance(download_result, tuple):
                 download_success, video_name = download_result
-                if download_success and video_name:
-                    method_used = "photo" if used_photo_method else "text"
-                    self.save_successful_prompt(prompt, method_used, video_name)
+            
+            # If video generation failed even after trying photo method, stop the program
+            if not download_success:
+                if used_photo_method:
+                    # Video generation failed even after trying photo method - stop program
+                    print("\n" + "="*60)
+                    print("✗ VIDEO GENERATION FAILED")
+                    print("="*60)
+                    print("Video generation failed even after:")
+                    print("  1. Initial video generation attempt")
+                    print("  2. Scrolling down and selecting first suggested photo")
+                    print("  3. Generating video from photo")
+                    print("\nStopping the program...")
+                    print("="*60)
+                    return False
+                else:
+                    # Initial attempt failed but didn't try photo method (shouldn't happen normally)
+                    print("⚠ Video download failed")
+                    return False
+            
+            # If video was successfully downloaded, save prompt to CSV
+            if download_success and video_name:
+                method_used = "photo" if used_photo_method else "text"
+                self.save_successful_prompt(prompt, method_used, video_name)
             
             # Go back to imagine tab for next prompt
             # If we used photo method, need to go back twice
@@ -1110,7 +1133,7 @@ pause
             default_upload_status = "Uploaded"
             
             # Use fixed path for final CSV
-            csv_filename = <PATH TO CSV FILE> #rf"V:\media\NAS\DATASET\GenAI_600\created_human_videos\metadata\{self.uid}\created_video_dataset.csv"
+            csv_filename = <YOUR CSV FILE PATH> # rf"V:\media\NAS\DATASET\GenAI_600\created_human_videos\metadata\{self.uid}\created_video_dataset.csv"
             
             # Ensure directory exists
             csv_dir = os.path.dirname(csv_filename)
@@ -1398,6 +1421,13 @@ def main():
                 successful += 1
             else:
                 failed += 1
+                # If video generation failed (especially after photo method), stop the program
+                print("\n" + "="*60)
+                print("✗ STOPPING PROGRAM")
+                print("="*60)
+                print("Video generation failed. Program stopped.")
+                print("="*60)
+                break
             
             if i < len(prompts):
                 wait = config['wait_between_videos']

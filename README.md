@@ -38,7 +38,7 @@ pip install -r requirements.txt
 1. Create a free API key at: **openrouter.ai**
 2. Insert the key into line 10 of `prompt_gen.py`.
 3. Install **RAIDRIVE** if you want to access the server disk through Windows Explorer.
-4. Update `self.download_dir` in `line 156` of `video_create.py` to your preferred output directory, and path to output `csv_filename` in 'line 1041'. 
+4. Update `self.download_dir` in `line 156` of `video_create.py` to your preferred output directory, and path to output `csv_filename` in 'line 1136'. 
 Update your UID in file "config.json"
 
 ---
