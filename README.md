@@ -52,4 +52,4 @@ Update your UID in file "config.json"
    * (If you have suggestions for automating this step, contributions are welcome!)
 3. Run `gen_exe.bat` to start generating videos. NO MANUAL STEPS required futher.
 
-( In side `gen_exe.bat`, it'll first run `prompt_gen.py` to create 20 prompts by LLMs. Then, `video_create.py` create video and download sequentially. One'CSV' file created after all will store time stamp, video name, prompt for each video.)
+( In side `gen_exe.bat`, it'll first run `prompt_gen.py` to create 20 prompts by LLMs. Then, `video_create.py` create video and download sequentially. One'CSV' file created to save all meta data in your meta directory `etadata/[UID/`.)
