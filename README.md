@@ -38,7 +38,7 @@ pip install -r requirements.txt
 1. Create a free API key at: **openrouter.ai**
 2. Insert the key into line 10 of `prompt_gen.py`.
 3. Install **RAIDRIVE** if you want to access the server disk through Windows Explorer.
-4. Update `self.download_dir` in `line 96` of `video_create.py` to your preferred output directory. 
+4. Update `self.download_dir` in `line 156` of `video_create.py` to your preferred output directory, and path to output CSV file in 'line 1041'. 
 Update your UID in file "config.json"
 
 ---
@@ -52,4 +52,4 @@ Update your UID in file "config.json"
    * (If you have suggestions for automating this step, contributions are welcome!)
 3. Run `gen_exe.bat` to start generating videos. NO MANUAL STEPS required futher.
 
-( In side `gen_exe.bat`, it'll first run `prompt_gen.py` to create 20 prompts by LLMs. Then, `video_create.py` create video and download sequentially. One'CSV' file created to save all meta data in your meta directory `etadata/[UID/`.)
+( In side `gen_exe.bat`, it'll first run `prompt_gen.py` to create 20 prompts by LLMs. Then, `video_create.py` create video and download sequentially. One'CSV' file created to save all meta data in your meta directory `GenAI_600\created_human_videos\metadata\[UID]`.)

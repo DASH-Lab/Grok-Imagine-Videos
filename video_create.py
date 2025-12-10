@@ -79,7 +79,6 @@ def extract_demographics(text):
     race_map = {
         'caucasian': 'W',
         'asian': 'A',
-        'black': 'B',
         'african': 'B',
         'hispanic': 'H',
         'latino': 'H',
@@ -87,6 +86,7 @@ def extract_demographics(text):
         'indian': 'I',
         'middle eastern': 'M',
         'arab': 'M',
+        'black': 'B',
         'white': 'W',
     }
     
@@ -153,7 +153,7 @@ class GrokVideoAutomation:
         self.uid = uid
         
         # Remote drive path (RaiDrive mounted)
-        self.download_dir = rf"V:\media\NAS\DATASET\GenAI_600\created_human_videos\Grok\{self.uid}"  
+        self.download_dir = <PATH_TO_YOUR_DOWNLOAD_DIRECTORY> # rf"V:\media\NAS\DATASET\GenAI_600\created_human_videos\Grok\{self.uid}"  
         
         # Ensure download directory exists (works with remote drives too)
         try:
@@ -1038,7 +1038,7 @@ pause
             default_upload_status = "Uploaded"
             
             # Use fixed path for final CSV
-            csv_filename = rf"V:\media\NAS\DATASET\GenAI_600\created_human_videos\metadata\{self.uid}\created_video_dataset.csv"
+            csv_filename = <PATH_TO_YOUR_CSV_FILE> # rf"V:\media\NAS\DATASET\GenAI_600\created_human_videos\metadata\{self.uid}\created_video_dataset.csv"
             
             # Ensure directory exists
             csv_dir = os.path.dirname(csv_filename)
