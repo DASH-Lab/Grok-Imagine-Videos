@@ -20,6 +20,54 @@ import urllib.request
 import urllib.error
 import glob
 import csv
+
+# Try to import video processing libraries
+try:
+    from moviepy.editor import VideoFileClip
+    MOVIEPY_AVAILABLE = True
+except ImportError:
+    MOVIEPY_AVAILABLE = False
+    try:
+        import cv2
+        CV2_AVAILABLE = True
+    except ImportError:
+        CV2_AVAILABLE = False
+
+def get_video_duration(video_path):
+    """
+    Get video duration in seconds.
+    Tries moviepy first, then opencv as fallback.
+    """
+    if not os.path.exists(video_path):
+        print(f"⚠ Video file not found: {video_path}")
+        return ""
+    
+    try:
+        if MOVIEPY_AVAILABLE:
+            # Use moviepy (preferred method)
+            clip = VideoFileClip(video_path)
+            duration = clip.duration
+            clip.close()
+            return round(duration, 2)  # Round to 2 decimal places
+        elif CV2_AVAILABLE:
+            # Use opencv as fallback
+            cap = cv2.VideoCapture(video_path)
+            if cap.isOpened():
+                fps = cap.get(cv2.CAP_PROP_FPS)
+                frame_count = cap.get(cv2.CAP_PROP_FRAME_COUNT)
+                if fps > 0:
+                    duration = frame_count / fps
+                    cap.release()
+                    return round(duration, 2)
+                cap.release()
+            return ""
+        else:
+            print("⚠ No video processing library available. Install moviepy or opencv-python")
+            return ""
+    except Exception as e:
+        print(f"⚠ Error getting video duration: {e}")
+        return ""
+
 def extract_demographics(text):
     """
     Extract race and gender from a text description.
@@ -29,17 +77,17 @@ def extract_demographics(text):
     
     # Define race keywords and their codes
     race_map = {
+        'caucasian': 'W',
         'asian': 'A',
         'black': 'B',
         'african': 'B',
-        'white': 'W',
-        'caucasian': 'W',
         'hispanic': 'H',
         'latino': 'H',
         'latina': 'H',
         'indian': 'I',
         'middle eastern': 'M',
-        'arab': 'M'
+        'arab': 'M',
+        'white': 'W',
     }
     
     # Define gender keywords and their codes
@@ -81,19 +129,31 @@ except ImportError:
     print("   pip install undetected-chromedriver")
 
 class GrokVideoAutomation:
-    def __init__(self, use_existing_browser=True, debugger_port=9222):
+    def __init__(self, use_existing_browser=True, debugger_port=9222, uid=None):
         """
         Initialize automation
         
         Args:
             use_existing_browser: Connect to existing Chrome instead of opening new
             debugger_port: Port for Chrome remote debugging (default: 9222)
+            uid: User ID for file naming and paths (default: loads from config)
         """
         self.use_existing_browser = use_existing_browser
         self.debugger_port = debugger_port
         self.driver = None
+        
+        # Load UID from config if not provided
+        if uid is None:
+            try:
+                config = load_config()
+                uid = config.get("UID", "binh")
+            except:
+                uid = "binh"  # Fallback default
+        
+        self.uid = uid
+        
         # Remote drive path (RaiDrive mounted)
-        self.download_dir = <YOUR_OUTPUT_FOLDER> # r"V:\media\NAS\DATASET\GenAI_600\created_human_videos\Grok\binh"  
+        self.download_dir = rf"V:\media\NAS\DATASET\GenAI_600\created_human_videos\Grok\{self.uid}"  
         
         # Ensure download directory exists (works with remote drives too)
         try:
@@ -541,8 +601,8 @@ pause
             if not os.path.exists(self.download_dir):
                 return 0
             
-            # Count MP4 files matching the pattern Gr-binh-*-*-*.mp4 (with race and gender codes)
-            pattern = os.path.join(self.download_dir, "Gr-binh-*-*-*.mp4")
+            # Count MP4 files matching the pattern Gr-{uid}-*-*-*.mp4 (with race and gender codes)
+            pattern = os.path.join(self.download_dir, f"Gr-{self.uid}-*-*-*.mp4")
             existing_files = glob.glob(pattern)
             return len(existing_files)
         except Exception as e:
@@ -558,11 +618,11 @@ pause
         n_exist_videos = self.count_existing_videos()
         next_number = n_exist_videos + 1
         
-        # Format: Gr-binh-<index>-<race-code>-<gender-code>.mp4
-        filename = f"Gr-binh-{next_number}-{race_code}-{gender_code}.mp4"
+        # Format: Gr-{uid}-<index>-<race-code>-<gender-code>.mp4
+        filename = f"Gr-{self.uid}-{next_number}-{race_code}-{gender_code}.mp4"
         return filename, next_number
     
-    def rename_downloaded_file(self, expected_filename, max_wait=20):
+    def rename_downloaded_file(self, expected_filename, max_wait=10):
         """Wait for download to complete and rename the file"""
         try:
             print(f"📁 Waiting for download to complete and renaming to: {expected_filename}")
@@ -610,7 +670,7 @@ pause
                 except:
                     pass
                 
-                if waited % 10 == 0:
+                if waited % 5 == 0:
                     print(f"   ... waiting for download ({waited}s/{max_wait}s)")
             
             # If we didn't find a new file, try to find the most recent MP4
@@ -902,30 +962,118 @@ pause
             return False
     
     def save_successful_prompt(self, prompt, method_used="text", video_name=""):
-        """Save successful prompt to CSV file with today's date"""
+        """Save successful prompt to CSV file with all required columns"""
         try:
-            # Get today's date in YY-MM-DD format
-            today = datetime.now().strftime("%y-%m-%d")
-            csv_filename = f"{today}.csv"
+            # Parse video filename to extract components
+            # Format: Gr-{uid}-{index}-{race}-{gender}.mp4
+            if not video_name:
+                print("⚠ No video name provided, skipping CSV save")
+                return
+            
+            # Remove .mp4 extension if present
+            base_name = video_name.replace('.mp4', '')
+            parts = base_name.split('-')
+            
+            # Extract components from filename
+            if len(parts) >= 5:
+                model_id = parts[0]  # "Gr"
+                uid = parts[1]  # UID from filename
+                video_index = parts[2]  # "1", "2", etc.
+                race = parts[3]  # "B", "W", etc.
+                gender = parts[4]  # "F", "M", etc.
+            else:
+                # Fallback if filename doesn't match expected format
+                model_id = "Gr"
+                uid = self.uid  # Use instance UID as default
+                video_index = "1"
+                race, gender = extract_demographics(prompt)
+                if race == "None":
+                    race = ""
+                if gender == "None":
+                    gender = ""
+            
+            # Get today's date in M/D/YYYY format (Windows uses %#m and %#d to remove leading zeros)
+            try:
+                # Windows format
+                date_str = datetime.now().strftime("%#m/%#d/%Y")
+            except ValueError:
+                # Non-Windows systems - manually remove leading zeros
+                date_str = datetime.now().strftime("%m/%d/%Y")
+                # Remove leading zeros from month and day
+                date_parts = date_str.split('/')
+                month = str(int(date_parts[0]))
+                day = str(int(date_parts[1]))
+                year = date_parts[2]
+                date_str = f"{month}/{day}/{year}"
+            
+            # Construct file directory path
+            # Convert Windows path to Unix-style path
+            # From: V:\media\NAS\DATASET\GenAI_600\created_human_videos\Grok\{uid}
+            # To: /NAS/DATASET/GenAI_600/created_human_video/Grok/{uid}/{filename}
+            file_directory = self.download_dir.replace('\\', '/')
+            # Remove drive letter and /media prefix if present (V:/media/...)
+            if file_directory.startswith('V:/media/'):
+                file_directory = file_directory.replace('V:/media/', '/')
+            elif ':/' in file_directory:
+                # Remove any drive letter (e.g., V:)
+                file_directory = file_directory.split(':/', 1)[1]
+                if not file_directory.startswith('/'):
+                    file_directory = '/' + file_directory
+            # Replace "created_human_videos" with "created_human_video" (singular)
+            file_directory = file_directory.replace('created_human_videos', 'created_human_video')
+            # Add filename
+            file_directory = f"{file_directory}/{video_name}"
+            
+            # Get video duration
+            video_path = os.path.join(self.download_dir, video_name)
+            video_length = get_video_duration(video_path)
+            if video_length:
+                video_length_str = str(video_length)
+            else:
+                video_length_str = ""
+            
+            # Default values
+            default_uid = uid  # Use extracted Uid from filename
+            default_qc_notes = "Checked"
+            default_upload_status = "Uploaded"
+            
+            # Use fixed path for final CSV
+            csv_filename = rf"V:\media\NAS\DATASET\GenAI_600\created_human_videos\metadata\{self.uid}\created_video_dataset.csv"
+            
+            # Ensure directory exists
+            csv_dir = os.path.dirname(csv_filename)
+            try:
+                os.makedirs(csv_dir, exist_ok=True)
+            except Exception as e:
+                print(f"⚠ Could not create CSV directory: {e}")
             
             # Check if file exists to determine if we need headers
             file_exists = os.path.exists(csv_filename)
             
             # Open CSV file in append mode
             with open(csv_filename, 'a', newline='', encoding='utf-8') as csvfile:
-                fieldnames = ['timestamp', 'video_name', 'prompt', 'method']
+                fieldnames = ['Date', 'FileName', 'FileDirectory', 'ModelID', 'VideoLenght', 
+                             'Prompt', 'Uid', 'VideoIndex', 'Race', 'Gender', 'QC_Notes', 'UploadStatus']
                 writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
                 
                 # Write header if file is new
                 if not file_exists:
                     writer.writeheader()
                 
-                # Write the successful prompt
+                # Write the successful prompt with all required columns
                 writer.writerow({
-                    'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                    'video_name': video_name,
-                    'prompt': prompt,
-                    'method': method_used
+                    'Date': date_str,
+                    'FileName': video_name,
+                    'FileDirectory': file_directory,
+                    'ModelID': model_id,
+                    'VideoLenght': video_length_str,
+                    'Prompt': prompt,
+                    'Uid': default_uid,
+                    'VideoIndex': video_index,
+                    'Race': race,
+                    'Gender': gender,
+                    'QC_Notes': default_qc_notes,
+                    'UploadStatus': default_upload_status
                 })
             
             print(f"✓ Saved successful prompt to {csv_filename}")
@@ -1053,7 +1201,8 @@ def load_config(config_file="config.json"):
         "use_existing_browser": True,
         "debugger_port": 9222,
         "video_wait_time": 180,
-        "wait_between_videos": 10
+        "wait_between_videos": 10,
+        "UID": "binh"
     }
     
     if os.path.exists(config_file):
@@ -1145,7 +1294,8 @@ def main():
     
     automation = GrokVideoAutomation(
         use_existing_browser=config.get("use_existing_browser", True),
-        debugger_port=config.get("debugger_port", 9222)
+        debugger_port=config.get("debugger_port", 9222),
+        uid=config.get("UID", "binh")
     )
     
     try:
