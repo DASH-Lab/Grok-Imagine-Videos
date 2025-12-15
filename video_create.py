@@ -156,7 +156,7 @@ class GrokVideoAutomation:
         self.uid = uid
         
         # Remote drive path (RaiDrive mounted)
-        self.download_dir =   rf"V:\media\NAS\DATASET\GenAI_600\Police_2025_Simon\created_human_video\Grok\{self.uid}"  
+        self.download_dir =   <YOUR INPUT> # rf"V:\media\NAS\DATASET\GenAI_600\Police_2025_Simon\created_human_video\Grok\{self.uid}"  
         
         # Ensure download directory exists (works with remote drives too)
         try:
@@ -1282,7 +1282,7 @@ pause
             default_upload_status = "Uploaded"
             
             # Use fixed path for final CSV
-            csv_filename =  rf"V:\media\NAS\DATASET\GenAI_600\Police_2025_Simon\created_human_video\metadata\{self.uid}\created_video_dataset.csv"
+            csv_filename =  <YOUR INPUT> # rf"V:\media\NAS\DATASET\GenAI_600\Police_2025_Simon\created_human_video\metadata\{self.uid}\created_video_dataset.csv"
             
             # Ensure directory exists
             csv_dir = os.path.dirname(csv_filename)
