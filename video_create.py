@@ -156,7 +156,7 @@ class GrokVideoAutomation:
         self.uid = uid
         
         # Remote drive path (RaiDrive mounted)
-        self.download_dir =   <YOUR INPUT> rf"V:\media\NAS\DATASET\GenAI_600\Police_2025_Simon\created_human_video\Grok\{self.uid}"  
+        self.download_dir =   rf"V:\media\NAS\DATASET\GenAI_600\Police_2025_Simon\created_human_video\Grok\{self.uid}"  
         
         # Ensure download directory exists (works with remote drives too)
         try:
@@ -1029,26 +1029,18 @@ pause
                         # Wait a bit more to ensure file is complete
                         time.sleep(2)
                         if os.path.exists(file_path):
-                            # Verify file was modified after download button was clicked
-                            try:
-                                file_mod_time = os.path.getmtime(file_path)
-                                # File should be modified within last 10 seconds (newly downloaded)
-                                if file_mod_time >= download_click_time - 15:  # Allow 2 second margin
-                                    print(f"✓ Real video file downloaded: {file}")
-                                    return (True, file)  # Video ready and already downloaded
-                                else:
-                                    print(f"⚠ File {file} exists but was not recently modified (old file)")
-                            except Exception as e:
-                                # If we can't check mod time, still accept it if it matches pattern
-                                print(f"✓ Real video file downloaded: {file} (could not verify mod time)")
-                                return (True, file)
+                            # Since file is in new_files, it's definitely a new download (wasn't there before)
+                            # Trust that it's a new file and accept it
+                            # Modification time check is unreliable on network drives due to time sync issues
+                            print(f"✓ Real video file downloaded: {file}")
+                            return (True, file)  # Video ready and already downloaded
                     # Also check for .mp4 files that don't match our renamed pattern
                     elif file_lower.endswith('.mp4') and not file_lower.startswith(f'gr-{self.uid.lower()}-'):
                         # This might be a Grok file with different naming
                         # Check if it's recently modified
                         try:
                             file_mod_time = os.path.getmtime(file_path)
-                            if file_mod_time >= download_click_time - 2:
+                            if file_mod_time >= download_click_time - 15:  # Allow 15 second margin for network/file system delays
                                 print(f"✓ Real video file downloaded: {file}")
                                 return (True, file)
                         except:
@@ -1069,7 +1061,7 @@ pause
                                     # Verify it's recently modified
                                     try:
                                         file_mod_time = os.path.getmtime(final_path)
-                                        if file_mod_time >= download_click_time - 2:
+                                        if file_mod_time >= download_click_time - 15:  # Allow 15 second margin for network/file system delays
                                             print(f"✓ Video download completed: {final_file}")
                                             return (True, final_file)
                                     except:
@@ -1087,7 +1079,7 @@ pause
                                     f_path = os.path.join(self.download_dir, f)
                                     try:
                                         file_mod_time = os.path.getmtime(f_path)
-                                        if file_mod_time >= download_click_time - 2:
+                                        if file_mod_time >= download_click_time - 15:  # Allow 15 second margin for network/file system delays
                                             print(f"✓ Video download completed: {f}")
                                             return (True, f)
                                     except:
@@ -1290,7 +1282,7 @@ pause
             default_upload_status = "Uploaded"
             
             # Use fixed path for final CSV
-            csv_filename =  <YOUR INPUT> rf"V:\media\NAS\DATASET\GenAI_600\Police_2025_Simon\created_human_video\metadata\{self.uid}\created_video_dataset.csv"
+            csv_filename =  rf"V:\media\NAS\DATASET\GenAI_600\Police_2025_Simon\created_human_video\metadata\{self.uid}\created_video_dataset.csv"
             
             # Ensure directory exists
             csv_dir = os.path.dirname(csv_filename)
