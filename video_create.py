@@ -20,6 +20,7 @@ import urllib.request
 import urllib.error
 import glob
 import csv
+import re
 
 # Try to import video processing libraries
 try:
@@ -155,7 +156,7 @@ class GrokVideoAutomation:
         self.uid = uid
         
         # Remote drive path (RaiDrive mounted)
-        self.download_dir =  <INPUT># rf"V:\media\NAS\DATASET\GenAI_600\Police_2025_Simon\created_human_video\Grok\{self.uid}"  
+        self.download_dir =   <YOUR INPUT> # rf"V:\media\NAS\DATASET\GenAI_600\Police_2025_Simon\created_human_video\Grok\{self.uid}"  
         
         # Ensure download directory exists (works with remote drives too)
         try:
@@ -758,18 +759,34 @@ pause
                 pass
             return False
     
-    def count_existing_videos(self):
-        """Count existing MP4 videos in download directory"""
+    def get_highest_video_index(self):
+        """Get the highest index number from existing video files"""
         try:
             if not os.path.exists(self.download_dir):
                 return 0
             
-            # Count MP4 files matching the pattern Gr-{uid}-*-*-*.mp4 (with race and gender codes)
+            # Find all files matching the pattern Gr-{uid}-{number}-*.mp4
             pattern = os.path.join(self.download_dir, f"Gr-{self.uid}-*.mp4")
             existing_files = glob.glob(pattern)
-            return len(existing_files)
+            
+            max_index = 0
+            # Pattern to extract index: Gr-{uid}-{number}-{race}-{gender}.mp4
+            index_pattern = re.compile(rf'Gr-{re.escape(self.uid)}-(\d+)-')
+            
+            for file in existing_files:
+                filename = os.path.basename(file)
+                match = index_pattern.match(filename)
+                if match:
+                    try:
+                        index = int(match.group(1))
+                        if index > max_index:
+                            max_index = index
+                    except ValueError:
+                        continue
+            
+            return max_index
         except Exception as e:
-            print(f"⚠ Error counting existing videos: {e}")
+            print(f"⚠ Error finding highest video index: {e}")
             return 0
     
     def get_next_video_filename(self, prompt):
@@ -777,9 +794,9 @@ pause
         # Extract demographics from prompt
         race_code, gender_code = extract_demographics(prompt)
         
-        # Count existing videos
-        n_exist_videos = self.count_existing_videos()
-        next_number = n_exist_videos + 1
+        # Get the highest existing index and add 1
+        highest_index = self.get_highest_video_index()
+        next_number = highest_index + 1
         
         # Format: Gr-{uid}-<index>-<race-code>-<gender-code>.mp4
         filename = f"Gr-{self.uid}-{next_number}-{race_code}-{gender_code}.mp4"
@@ -1229,7 +1246,7 @@ pause
             default_upload_status = "Uploaded"
             
             # Use fixed path for final CSV
-            csv_filename = <INPUT># rf"V:\media\NAS\DATASET\GenAI_600\Police_2025_Simon\created_human_video\metadata\{self.uid}\created_video_dataset.csv"
+            csv_filename =  <YOUR INPUT> # rf"V:\media\NAS\DATASET\GenAI_600\Police_2025_Simon\created_human_video\metadata\{self.uid}\created_video_dataset.csv"
             
             # Ensure directory exists
             csv_dir = os.path.dirname(csv_filename)
