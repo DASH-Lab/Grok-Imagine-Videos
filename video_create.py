@@ -1033,7 +1033,7 @@ pause
                             try:
                                 file_mod_time = os.path.getmtime(file_path)
                                 # File should be modified within last 10 seconds (newly downloaded)
-                                if file_mod_time >= download_click_time - 2:  # Allow 2 second margin
+                                if file_mod_time >= download_click_time - 15:  # Allow 2 second margin
                                     print(f"✓ Real video file downloaded: {file}")
                                     return (True, file)  # Video ready and already downloaded
                                 else:
