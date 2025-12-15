@@ -95,9 +95,11 @@ def extract_demographics(text):
         'woman': 'F',
         'female': 'F',
         'girl': 'F',
+        'lady': 'F',
         'man': 'M',
         'male': 'M',
-        'boy': 'M'
+        'boy': 'M',
+        'gentleman': 'M',
     }
     
     # Find race
@@ -153,7 +155,7 @@ class GrokVideoAutomation:
         self.uid = uid
         
         # Remote drive path (RaiDrive mounted)
-        self.download_dir =  <YOUR DOWNLOAD DIRECTORY> # rf"V:\media\NAS\DATASET\GenAI_600\created_human_videos\Grok\{self.uid}"  
+        self.download_dir =  <INPUT># rf"V:\media\NAS\DATASET\GenAI_600\Police_2025_Simon\created_human_video\Grok\{self.uid}"  
         
         # Ensure download directory exists (works with remote drives too)
         try:
@@ -515,7 +517,7 @@ pause
             # Type the prompt naturally
             for char in prompt:
                 input_element.send_keys(char)
-                time.sleep(0.02)  # Natural typing speed
+                time.sleep(0.01)  # Natural typing speed
             
             time.sleep(1)
             
@@ -555,7 +557,7 @@ pause
             
             # Wait a bit for video generation to start
             print("⏳ Waiting for video generation to start...")
-            time.sleep(45)  # Initial wait
+            time.sleep(90)  # Initial wait
             
             # Check if download button appears (video is ready)
             print("🔍 Checking if video is ready (looking for download button)...")
@@ -763,7 +765,7 @@ pause
                 return 0
             
             # Count MP4 files matching the pattern Gr-{uid}-*-*-*.mp4 (with race and gender codes)
-            pattern = os.path.join(self.download_dir, f"Gr-{self.uid}-*-*-*.mp4")
+            pattern = os.path.join(self.download_dir, f"Gr-{self.uid}-*.mp4")
             existing_files = glob.glob(pattern)
             return len(existing_files)
         except Exception as e:
@@ -988,8 +990,8 @@ pause
                 self.driver.execute_script("arguments[0].click();", download_button)
             
             # Wait and check what was downloaded
-            print("   Waiting 10 seconds to verify download type...")
-            time.sleep(10)
+            print("   Waiting 5 seconds to verify download type...")
+            time.sleep(5)
             
             if os.path.exists(self.download_dir):
                 current_files = set(os.listdir(self.download_dir))
@@ -1208,8 +1210,8 @@ pause
                 file_directory = file_directory.split(':/', 1)[1]
                 if not file_directory.startswith('/'):
                     file_directory = '/' + file_directory
-            # Replace "created_human_videos" with "created_human_video" (singular)
-            file_directory = file_directory.replace('created_human_videos', 'created_human_video')
+         
+            
             # Add filename
             file_directory = f"{file_directory}/{video_name}"
             
@@ -1227,7 +1229,7 @@ pause
             default_upload_status = "Uploaded"
             
             # Use fixed path for final CSV
-            csv_filename = <YOUR CSV FILE PATH> # rf"V:\media\NAS\DATASET\GenAI_600\created_human_videos\metadata\{self.uid}\created_video_dataset.csv"
+            csv_filename = <INPUT># rf"V:\media\NAS\DATASET\GenAI_600\Police_2025_Simon\created_human_video\metadata\{self.uid}\created_video_dataset.csv"
             
             # Ensure directory exists
             csv_dir = os.path.dirname(csv_filename)
