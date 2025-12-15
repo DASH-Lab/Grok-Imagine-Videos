@@ -156,7 +156,7 @@ class GrokVideoAutomation:
         self.uid = uid
         
         # Remote drive path (RaiDrive mounted)
-        self.download_dir =   <YOUR INPUT> # rf"V:\media\NAS\DATASET\GenAI_600\Police_2025_Simon\created_human_video\Grok\{self.uid}"  
+        self.download_dir =   <YOUR INPUT> rf"V:\media\NAS\DATASET\GenAI_600\Police_2025_Simon\created_human_video\Grok\{self.uid}"  
         
         # Ensure download directory exists (works with remote drives too)
         try:
@@ -1001,6 +1001,10 @@ pause
             print("🖱️ Testing download button click...")
             self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", download_button)
             time.sleep(0.5)
+            
+            # Record the time when download button was clicked (for checking file modification time)
+            download_click_time = time.time()
+            
             try:
                 download_button.click()
             except:
@@ -1019,37 +1023,77 @@ pause
                     file_lower = file.lower()
                     file_path = os.path.join(self.download_dir, file)
                     
-                    # Check if it's a video file (.mp4 or in-progress .crdownload)
-                    if file_lower.endswith('.mp4'):
+                    # Only detect files matching Grok's naming pattern (grok-video*)
+                    # Exclude already-renamed files (Gr-{uid}-*.mp4)
+                    if file_lower.startswith('grok-video') and file_lower.endswith('.mp4'):
                         # Wait a bit more to ensure file is complete
                         time.sleep(2)
                         if os.path.exists(file_path):
-                            print(f"✓ Real video file downloaded: {file}")
-                            return (True, file)  # Video ready and already downloaded
+                            # Verify file was modified after download button was clicked
+                            try:
+                                file_mod_time = os.path.getmtime(file_path)
+                                # File should be modified within last 10 seconds (newly downloaded)
+                                if file_mod_time >= download_click_time - 2:  # Allow 2 second margin
+                                    print(f"✓ Real video file downloaded: {file}")
+                                    return (True, file)  # Video ready and already downloaded
+                                else:
+                                    print(f"⚠ File {file} exists but was not recently modified (old file)")
+                            except Exception as e:
+                                # If we can't check mod time, still accept it if it matches pattern
+                                print(f"✓ Real video file downloaded: {file} (could not verify mod time)")
+                                return (True, file)
+                    # Also check for .mp4 files that don't match our renamed pattern
+                    elif file_lower.endswith('.mp4') and not file_lower.startswith(f'gr-{self.uid.lower()}-'):
+                        # This might be a Grok file with different naming
+                        # Check if it's recently modified
+                        try:
+                            file_mod_time = os.path.getmtime(file_path)
+                            if file_mod_time >= download_click_time - 2:
+                                print(f"✓ Real video file downloaded: {file}")
+                                return (True, file)
+                        except:
+                            pass
                             
                     elif file_lower.endswith('.crdownload'):
-                        # Chrome download in progress - likely a video
-                        print("✓ Video download in progress (.crdownload)")
-                        # Wait for download to complete
-                        waited = 0
-                        while waited < 30:
-                            time.sleep(2)
-                            waited += 2
-                            if os.path.exists(file_path.replace('.crdownload', '.mp4')):
-                                final_file = file.replace('.crdownload', '.mp4')
-                                print(f"✓ Video download completed: {final_file}")
-                                return (True, final_file)
-                            elif not os.path.exists(file_path):
-                                # Download may have failed or completed with different name
-                                break
-                        # If we get here, try to find the completed file
-                        current_files_after = set(os.listdir(self.download_dir))
-                        new_files_after = current_files_after - initial_files
-                        for f in new_files_after:
-                            if f.lower().endswith('.mp4'):
-                                print(f"✓ Video download completed: {f}")
-                                return (True, f)
-                        return (True, None)  # Video ready but filename unknown
+                        # Chrome download in progress - check if it matches grok-video pattern
+                        if file_lower.startswith('grok-video'):
+                            print("✓ Video download in progress (.crdownload)")
+                            # Wait for download to complete
+                            waited = 0
+                            while waited < 30:
+                                time.sleep(2)
+                                waited += 2
+                                final_path = file_path.replace('.crdownload', '.mp4')
+                                if os.path.exists(final_path):
+                                    final_file = file.replace('.crdownload', '.mp4')
+                                    # Verify it's recently modified
+                                    try:
+                                        file_mod_time = os.path.getmtime(final_path)
+                                        if file_mod_time >= download_click_time - 2:
+                                            print(f"✓ Video download completed: {final_file}")
+                                            return (True, final_file)
+                                    except:
+                                        print(f"✓ Video download completed: {final_file}")
+                                        return (True, final_file)
+                                elif not os.path.exists(file_path):
+                                    # Download may have failed or completed with different name
+                                    break
+                            # If we get here, try to find the completed grok-video file
+                            current_files_after = set(os.listdir(self.download_dir))
+                            new_files_after = current_files_after - initial_files
+                            for f in new_files_after:
+                                f_lower = f.lower()
+                                if f_lower.endswith('.mp4') and f_lower.startswith('grok-video'):
+                                    f_path = os.path.join(self.download_dir, f)
+                                    try:
+                                        file_mod_time = os.path.getmtime(f_path)
+                                        if file_mod_time >= download_click_time - 2:
+                                            print(f"✓ Video download completed: {f}")
+                                            return (True, f)
+                                    except:
+                                        print(f"✓ Video download completed: {f}")
+                                        return (True, f)
+                            return (True, None)  # Video ready but filename unknown
                     
                     # Check for thumbnail image formats
                     elif file_lower.endswith(('.jpg', '.jpeg', '.png', '.gif', '.webp')):
@@ -1246,7 +1290,7 @@ pause
             default_upload_status = "Uploaded"
             
             # Use fixed path for final CSV
-            csv_filename =  <YOUR INPUT> # rf"V:\media\NAS\DATASET\GenAI_600\Police_2025_Simon\created_human_video\metadata\{self.uid}\created_video_dataset.csv"
+            csv_filename =  <YOUR INPUT> rf"V:\media\NAS\DATASET\GenAI_600\Police_2025_Simon\created_human_video\metadata\{self.uid}\created_video_dataset.csv"
             
             # Ensure directory exists
             csv_dir = os.path.dirname(csv_filename)
